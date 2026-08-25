@@ -1,0 +1,119 @@
+import SwiftUI
+
+struct TaskListView: View {
+    @Environment(TasksStore.self) private var tasksStore
+    @State private var sortOrder: SortOrder = .dueDate
+
+    enum SortOrder: String, CaseIterable, Identifiable {
+        case dueDate = "Due Date"
+        case priority = "Priority"
+        var id: String { rawValue }
+    }
+
+    private var sortedTasks: [TaskItem] {
+        switch sortOrder {
+        case .dueDate:
+            tasksStore.tasks.sorted { ($0.dueDate ?? .distantFuture) < ($1.dueDate ?? .distantFuture) }
+        case .priority:
+            tasksStore.tasks.sorted { $0.priority > $1.priority }
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List(sortedTasks) { task in
+                NavigationLink(value: task.id) {
+                    TaskRowView(task: task)
+                }
+                .swipeActions(edge: .leading) {
+                    Button {
+                        tasksStore.toggleComplete(task)
+                    } label: {
+                        Label(
+                            task.isComplete ? "Reopen" : "Done",
+                            systemImage: task.isComplete ? "arrow.uturn.backward" : "checkmark"
+                        )
+                    }
+                    .tint(.green)
+                }
+                .contextMenu {
+                    ShareLink(item: task.shareSummary) {
+                        Label("Share Task", systemImage: "square.and.arrow.up")
+                    }
+                }
+            }
+            .navigationTitle("Tasks")
+            .navigationDestination(for: UUID.self) { id in
+                if let task = tasksStore.task(id: id) {
+                    TaskDetailView(task: task)
+                }
+            }
+            .toolbar {
+                Menu {
+                    Picker("Sort By", selection: $sortOrder) {
+                        ForEach(SortOrder.allCases) { order in
+                            Text(order.rawValue).tag(order)
+                        }
+                    }
+                } label: {
+                    Label("Sort", systemImage: "arrow.up.arrow.down")
+                }
+            }
+        }
+    }
+}
+
+struct TaskRowView: View {
+    let task: TaskItem
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: task.isComplete ? "checkmark.circle.fill" : "circle")
+                .foregroundStyle(task.isComplete ? .green : .secondary)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(task.title)
+                    .strikethrough(task.isComplete)
+                    .foregroundStyle(task.isComplete ? .secondary : .primary)
+
+                HStack(spacing: 8) {
+                    if let dueDate = task.dueDate {
+                        Text(dueDate.formatted(date: .abbreviated, time: .omitted))
+                            .foregroundStyle(task.isOverdue ? .red : .secondary)
+                    }
+                    if let assignee = task.assignee {
+                        Text(assignee.initials)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(.quaternary, in: Capsule())
+                    }
+                }
+                .font(.caption)
+            }
+
+            Spacer()
+
+            if task.isSensitive {
+                Image(systemName: "lock.fill")
+                    .foregroundStyle(.secondary)
+            }
+
+            Image(systemName: task.priority.systemImage)
+                .foregroundStyle(priorityColor)
+        }
+        .padding(.vertical, 2)
+    }
+
+    private var priorityColor: Color {
+        switch task.priority {
+        case .low: .gray
+        case .medium: .orange
+        case .high: .red
+        }
+    }
+}
+
+#Preview {
+    TaskListView()
+        .environment(TasksStore())
+}
