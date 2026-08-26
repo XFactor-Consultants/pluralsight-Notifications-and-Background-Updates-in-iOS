@@ -76,4 +76,9 @@ final class TasksStore {
         guard let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
         tasks[index].isComplete.toggle()
     }
+    func updateDueDate(_ date: Date?, for task: TaskItem) {
+        guard let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
+        tasks[index].dueDate = date
+    }
+
 }

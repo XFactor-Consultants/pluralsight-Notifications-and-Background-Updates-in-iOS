@@ -38,6 +38,11 @@ struct TaskDetailView: View {
                 if task.isSensitive {
                     LabeledContent("Sensitive", value: "Yes")
                 }
+                DatePicker("Due Date", selection: Binding(
+                    get: { task.dueDate ?? .now },
+                    set: { newDate in tasksStore.updateDueDate(newDate, for: task) }
+                ), displayedComponents: [.date, .hourAndMinute])
+
             }
 
             Section {
@@ -48,6 +53,20 @@ struct TaskDetailView: View {
         }
         .navigationTitle("Task")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: task.dueDate) { _, newValue in
+            
+            guard newValue != nil else { return }
+            
+            Task {
+                
+                let granted = await NotificationPermission.requestIfNeeded()
+                
+                if granted {
+                    
+                    TaskReminderScheduler.scheduleDueReminder(for: task)
+                    
+                }
+            }}
         .toolbar {
             ShareLink(item: task.shareSummary) {
                 Label("Share", systemImage: "square.and.arrow.up")
