@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 @Observable
 final class TasksStore {
     private(set) var tasks: [TaskItem]
@@ -22,6 +23,7 @@ final class TasksStore {
                 isSensitive: true
             ),
             TaskItem(
+                id: UUID(uuidString: "8B4A1F2C-3D4E-4A5B-9C1D-2E3F4A5B6C7D")!,
                 title: "Prepare sprint demo",
                 notes: "Walk through the new filtering flow. Keep it under ten minutes.",
                 assignee: marcus,
@@ -76,9 +78,15 @@ final class TasksStore {
         guard let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
         tasks[index].isComplete.toggle()
     }
+
     func updateDueDate(_ date: Date?, for task: TaskItem) {
         guard let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
         tasks[index].dueDate = date
     }
 
+    func applyRemoteAssignment(_ payload: TaskAssignmentPayload) {
+        let assignee = Teammate(name: payload.assigneeName)
+        let newTask = TaskItem(id: payload.taskID, title: payload.title, assignee: assignee)
+        tasks.append(newTask)
+    }
 }

@@ -16,9 +16,12 @@ enum TaskReminderScheduler {
         
         content.title = task.title
         content.body = "This task is due."
+
         
         content.sound = task.priority == .high ? .defaultCritical : .default
         content.badge = 1
+        content.categoryIdentifier = NotificationCategories.taskAssignment
+
         
         let trigger = UNCalendarNotificationTrigger(
             
