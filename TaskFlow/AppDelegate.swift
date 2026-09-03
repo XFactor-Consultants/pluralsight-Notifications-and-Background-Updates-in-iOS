@@ -20,6 +20,7 @@ enum RemoteNotificationRegistrar {
 }
 
 class AppDelegate: NSObject, UIApplicationDelegate {
+    var backgroundSessionCompletionHandler: (() -> Void)?
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         
@@ -51,14 +52,41 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         
     }
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any]) async -> UIBackgroundFetchResult {
+        print("didReceiveRemoteNotification FIRED")
+        await RefreshCoordinator.refresh()
         guard let payload = TaskAssignmentPayload(userInfo: userInfo) else {
-            print("Malformed remote payload — ignoring.")
             return .noData
         }
-        print("Processed remote assignment: \(payload.title) for \(payload.assigneeName)")
-        // In a real app, this would reach into the shared TasksStore via
-        // dependency injection rather than a global — simplified here.
         return .newData
     }
+    
+    func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
+        
+        backgroundSessionCompletionHandler = completionHandler
+        print("Background URLSession finished: (identifier)")
+    }
+    #if DEBUG
+    
+    static func debugSimulateSilentPush() async {
+        
+        let testUserInfo: [AnyHashable: Any] = [
+            
+            "aps": ["content-available": 1],
+            
+            "taskID": "8B4A1F2C-3D4E-4A5B-9C1D-2E3F4A5B6C7D",
+            
+            "title": "Review teammate's edits",
+            
+            "assigneeName": "Marcus Webb"
+            
+        ]
+        
+        let delegate = AppDelegate()
+        
+        _ = await delegate.application(UIApplication.shared, didReceiveRemoteNotification: testUserInfo)
+        
+    }
+    
+    #endif
 }
 
