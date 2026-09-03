@@ -8,6 +8,20 @@ struct SettingsView: View {
             Form {
                 Section("Account") {
                     LabeledContent("Status", value: "Not signed in")
+                    #if DEBUG
+                    
+                    Button("Simulate Silent Push") {
+                        
+                        Task {
+                            
+                            await AppDelegate.debugSimulateSilentPush()
+                            
+                        }
+                        
+                    }
+                    
+                    #endif
+                    }
                 }
 
                 Section("Workspace") {
@@ -33,7 +47,6 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
         }
-    }
 }
 
 #Preview {

@@ -59,6 +59,7 @@ enum BackgroundArchiveScheduler {
             
         }
         
+        HistorySyncManager.startSync()
         task.setTaskCompleted(success: true)
         
     }

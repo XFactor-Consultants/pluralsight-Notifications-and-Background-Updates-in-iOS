@@ -41,9 +41,10 @@ enum BackgroundRefreshScheduler {
             
         }
         
-        print("Pretending to pull teammate edits...")
-        
-        task.setTaskCompleted(success: true)
+        Task {
+            await RefreshCoordinator.refresh()
+            task.setTaskCompleted(success: true)
+        }
         
     }
     
